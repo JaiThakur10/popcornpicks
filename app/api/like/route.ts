@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { pusher } from "@/lib/pusher";
+import { sendPush } from "@/lib/sendPush";
 import { NotificationType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,6 @@ export async function POST(req: Request) {
     },
   });
 
-  // 🔔 notification
   const notification = await prisma.notification.create({
     data: {
       type: NotificationType.LIKE,
@@ -44,8 +44,16 @@ export async function POST(req: Request) {
     },
   });
 
-  // ⚡ realtime event
   await pusher.trigger("notifications", "new-notification", notification);
+
+  /* 🔔 mobile push */
+  if (body.movieOwnerId && body.movieOwnerId !== body.userId) {
+    await sendPush(
+      body.movieOwnerId,
+      "PopcornPicks",
+      `${body.userName} liked "${body.movieTitle}"`,
+    );
+  }
 
   return NextResponse.json({ liked: true });
 }

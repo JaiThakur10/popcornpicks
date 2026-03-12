@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { pusher } from "@/lib/pusher";
+import { sendPush } from "@/lib/sendPush";
 import { NotificationType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,6 @@ export async function POST(req: Request) {
     },
   });
 
-  // 🔔 create notification
   const notification = await prisma.notification.create({
     data: {
       type: NotificationType.MOVIE,
@@ -30,8 +30,16 @@ export async function POST(req: Request) {
     },
   });
 
-  // ⚡ send real-time event
   await pusher.trigger("notifications", "new-notification", notification);
+
+  /* 🔔 push notification (optional example) */
+  if (body.notifyUserId) {
+    await sendPush(
+      body.notifyUserId,
+      "PopcornPicks",
+      `${body.userName} recommended "${body.title}"`,
+    );
+  }
 
   return NextResponse.json(movie);
 }

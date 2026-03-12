@@ -16,6 +16,7 @@ interface Movie {
   poster: string;
   review: string;
   recommendedByName: string;
+  recommendedById: string; // 👈 ADD
   likes: { id: string; userId: string }[];
   commentCount: number;
 }
@@ -46,6 +47,7 @@ export default function MovieCard({ movie }: { movie: Movie }) {
       body: JSON.stringify({
         movieId: movie.id,
         movieTitle: movie.title,
+        movieOwnerId: movie.recommendedById, // 👈 add this
         userId: user.id,
         userName: user.fullName,
       }),

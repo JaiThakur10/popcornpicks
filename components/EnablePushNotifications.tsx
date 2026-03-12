@@ -9,14 +9,26 @@ export default function EnablePushNotifications() {
 
   useEffect(() => {
     async function requestPermission() {
-      const permission = await Notification.requestPermission();
+      try {
+        if (!user || !messaging) return;
 
-      if (permission === "granted" && messaging && user) {
+        const permission = await Notification.requestPermission();
+
+        if (permission !== "granted") {
+          console.log("Notification permission denied");
+          return;
+        }
+
         const token = await getToken(messaging, {
           vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
         });
 
-        if (!token) return;
+        if (!token) {
+          console.log("No FCM token generated");
+          return;
+        }
+
+        console.log("FCM Token:", token);
 
         await fetch("/api/push-token", {
           method: "POST",
@@ -28,6 +40,8 @@ export default function EnablePushNotifications() {
             userId: user.id,
           }),
         });
+      } catch (error) {
+        console.error("Push notification error:", error);
       }
     }
 

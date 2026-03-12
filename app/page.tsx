@@ -13,6 +13,7 @@ interface Movie {
   poster: string;
   review: string;
   recommendedByName: string;
+  recommendedById: string; // 👈 ADD THIS
   likes: { id: string; userId: string }[];
   _count: {
     comments: number;
@@ -394,6 +395,7 @@ export default function Home() {
                     <MovieCard
                       movie={{
                         ...movie,
+                        recommendedById: movie.recommendedById,
                         commentCount: movie._count.comments,
                       }}
                     />

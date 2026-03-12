@@ -8,13 +8,15 @@ export async function GET() {
     orderBy: {
       createdAt: "desc",
     },
-    take: 24, // limit movies for faster load
+    take: 24,
     select: {
       id: true,
       title: true,
       poster: true,
       review: true,
-      recommendedByName: true,
+
+      recommendedBy: true, // user id
+      recommendedByName: true, // display name
 
       likes: {
         select: {
@@ -31,5 +33,10 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json(movies);
+  return NextResponse.json(
+    movies.map((m) => ({
+      ...m,
+      recommendedById: m.recommendedBy, // alias for frontend
+    })),
+  );
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { pusher } from "@/lib/pusher";
+import { sendPush } from "@/lib/sendPush";
 import { NotificationType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +56,17 @@ export async function POST(req: Request) {
       },
     });
 
+    /* Realtime notification */
     await pusher.trigger("notifications", "new-notification", notification);
+
+    /* 🔔 Mobile push notification */
+    if (body.movieOwnerId) {
+      await sendPush(
+        body.movieOwnerId,
+        "PopcornPicks",
+        `${body.userName} commented on "${body.movieTitle}"`,
+      );
+    }
 
     return NextResponse.json(comment);
   } catch (error) {

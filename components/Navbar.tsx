@@ -5,6 +5,8 @@ import Link from "next/link";
 import { PiPopcornFill } from "react-icons/pi";
 import { HiPlus } from "react-icons/hi2";
 import { RiLoginCircleLine } from "react-icons/ri";
+import NotificationBell from "@/components/NotificationBell";
+import EnablePushNotifications from "@/components/EnablePushNotifications";
 
 export default function Navbar() {
   return (
@@ -198,6 +200,8 @@ export default function Navbar() {
 
             {/* Auth — signed in */}
             <Show when="signed-in">
+              <NotificationBell />
+              <EnablePushNotifications />
               <div
                 style={{
                   padding: "2px",

@@ -7,20 +7,16 @@ import { PiPopcornFill, PiFilmSlateDuotone } from "react-icons/pi";
 import { HiSparkles } from "react-icons/hi2";
 import { TbDropletMinus, TbMovie } from "react-icons/tb";
 
-interface Comment {
-  id: string;
-  text: string;
-  userName: string | null;
-}
-
 interface Movie {
   id: string;
   title: string;
   poster: string;
   review: string;
   recommendedByName: string;
-  likes: { id: string }[];
-  comments: Comment[];
+  likes: { id: string; userId: string }[];
+  _count: {
+    comments: number;
+  };
 }
 
 export default function Home() {
@@ -278,7 +274,7 @@ export default function Home() {
                     },
                     {
                       icon: <TbMovie />,
-                      value: movies.reduce((s, m) => s + m.comments.length, 0),
+                      value: movies.reduce((s, m) => s + m._count.comments, 0),
                       label: "reviews",
                     },
                   ].map(({ icon, value, label }) => (
@@ -380,7 +376,7 @@ export default function Home() {
               </div>
             ) : (
               <div
-                className="grid gap-5"
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
                 style={{
                   gridTemplateColumns:
                     "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
@@ -395,7 +391,12 @@ export default function Home() {
                       transition: `opacity 0.55s ease ${80 + i * 65}ms, transform 0.55s ease ${80 + i * 65}ms`,
                     }}
                   >
-                    <MovieCard movie={movie} />
+                    <MovieCard
+                      movie={{
+                        ...movie,
+                        commentCount: movie._count.comments,
+                      }}
+                    />
                   </div>
                 ))}
               </div>

@@ -8,10 +8,26 @@ export async function GET() {
     orderBy: {
       createdAt: "desc",
     },
-    include: {
-      comments: true,
-      likes: true,
-      ratings: true,
+    take: 24, // limit movies for faster load
+    select: {
+      id: true,
+      title: true,
+      poster: true,
+      review: true,
+      recommendedByName: true,
+
+      likes: {
+        select: {
+          id: true,
+          userId: true,
+        },
+      },
+
+      _count: {
+        select: {
+          comments: true,
+        },
+      },
     },
   });
 

@@ -10,26 +10,22 @@ import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import { RiUserSmileLine } from "react-icons/ri";
 import { TbMessage2 } from "react-icons/tb";
 
-interface Comment {
-  id: string;
-  text: string;
-  userName: string | null;
-}
-
 interface Movie {
   id: string;
   title: string;
   poster: string;
   review: string;
   recommendedByName: string;
-  likes: { id: string }[];
-  comments: Comment[];
+  likes: { id: string; userId: string }[];
+  commentCount: number;
 }
 
 export default function MovieCard({ movie }: { movie: Movie }) {
   const { user } = useUser();
   const [likes, setLikes] = useState(movie.likes.length);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(
+    movie.likes.some((like) => like.userId === user?.id),
+  );
   const [likeAnim, setLikeAnim] = useState(false);
 
   async function toggleLike(e: React.MouseEvent) {
@@ -47,7 +43,12 @@ export default function MovieCard({ movie }: { movie: Movie }) {
     const res = await fetch("/api/like", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ movieId: movie.id, userId: user.id }),
+      body: JSON.stringify({
+        movieId: movie.id,
+        movieTitle: movie.title,
+        userId: user.id,
+        userName: user.fullName,
+      }),
     });
 
     const data = await res.json();
@@ -241,7 +242,7 @@ export default function MovieCard({ movie }: { movie: Movie }) {
             <span
               style={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}
             >
-              {movie.comments.length}
+              {movie.commentCount}
             </span>
           </div>
 
@@ -258,7 +259,7 @@ export default function MovieCard({ movie }: { movie: Movie }) {
 
         {/* Comment section */}
         <div onClick={(e) => e.stopPropagation()} style={{ marginTop: "2px" }}>
-          <CommentSection movieId={movie.id} comments={movie.comments} />
+          <CommentSection movieId={movie.id} />
         </div>
       </div>
     </div>

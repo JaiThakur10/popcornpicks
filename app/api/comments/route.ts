@@ -1,9 +1,38 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { pusher } from "@/lib/pusher";
+import { NotificationType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+/* GET comments */
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const movieId = searchParams.get("movieId");
+
+  if (!movieId) {
+    return NextResponse.json([]);
+  }
+
+  const comments = await prisma.comment.findMany({
+    where: {
+      movieId,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+    select: {
+      id: true,
+      text: true,
+      userName: true,
+    },
+  });
+
+  return NextResponse.json(comments);
+}
+
+/* POST comment */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -16,6 +45,17 @@ export async function POST(req: Request) {
         userName: body.userName,
       },
     });
+
+    const notification = await prisma.notification.create({
+      data: {
+        type: NotificationType.COMMENT,
+        message: `${body.userName} commented on "${body.movieTitle}"`,
+        movieId: body.movieId,
+        actorId: body.userId,
+      },
+    });
+
+    await pusher.trigger("notifications", "new-notification", notification);
 
     return NextResponse.json(comment);
   } catch (error) {

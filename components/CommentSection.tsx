@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { TbSend2 } from "react-icons/tb";
 import { RiUserSmileLine } from "react-icons/ri";
@@ -12,26 +12,36 @@ interface Comment {
   userName: string | null;
 }
 
-export default function CommentSection({
-  movieId,
-  comments,
-}: {
-  movieId: string;
-  comments: Comment[];
-}) {
+export default function CommentSection({ movieId }: { movieId: string }) {
   const { user } = useUser();
+
   const [text, setText] = useState("");
-  const [commentList, setCommentList] = useState(comments);
+  const [commentList, setCommentList] = useState<Comment[]>([]);
   const [posting, setPosting] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  /* Fetch comments */
+  useEffect(() => {
+    async function fetchComments() {
+      const res = await fetch(`/api/comments?movieId=${movieId}`);
+      const data = await res.json();
+      setCommentList(data);
+      setLoading(false);
+    }
+
+    fetchComments();
+  }, [movieId]);
 
   async function addComment() {
     if (!user) {
       alert("Login to comment");
       return;
     }
+
     if (!text.trim()) return;
 
     setPosting(true);
+
     const res = await fetch("/api/comments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -44,6 +54,7 @@ export default function CommentSection({
     });
 
     const newComment = await res.json();
+
     setCommentList((prev) => [...prev, newComment]);
     setText("");
     setPosting(false);
@@ -57,76 +68,32 @@ export default function CommentSection({
   }
 
   return (
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{ fontFamily: "'DM Sans', sans-serif" }}
-    >
+    <div onClick={(e) => e.stopPropagation()}>
       {/* Divider */}
-      <div
-        style={{
-          height: "1px",
-          background:
-            "linear-gradient(to right, rgba(255,255,255,0.07), transparent)",
-          marginBottom: "12px",
-        }}
-      />
+      <div className="h-px bg-gradient-to-r from-white/10 to-transparent mb-3" />
+
+      {/* Loading */}
+      {loading && (
+        <div className="text-[10px] text-white/20 italic mb-2">
+          Loading reviews...
+        </div>
+      )}
 
       {/* Comment list */}
-      {commentList.length > 0 && (
-        <div
-          className="flex flex-col gap-2"
-          style={{
-            marginBottom: "12px",
-            maxHeight: "140px",
-            overflowY: "auto",
-          }}
-        >
-          {commentList.map((c, i) => (
-            <div
-              key={c.id}
-              className="flex gap-2 items-start"
-              style={{
-                animation: `fadeSlideIn 0.3s ease ${i === commentList.length - 1 ? "0ms" : "0ms"} both`,
-              }}
-            >
-              {/* Avatar initial */}
-              <div
-                className="flex-shrink-0 flex items-center justify-center rounded-full"
-                style={{
-                  width: "22px",
-                  height: "22px",
-                  background: "rgba(245,166,35,0.12)",
-                  border: "1px solid rgba(245,166,35,0.2)",
-                  fontSize: "9px",
-                  fontWeight: 700,
-                  color: "rgba(245,166,35,0.8)",
-                  marginTop: "1px",
-                }}
-              >
+      {!loading && commentList.length > 0 && (
+        <div className="flex flex-col gap-2 mb-3 max-h-[140px] overflow-y-auto">
+          {commentList.map((c) => (
+            <div key={c.id} className="flex gap-2 items-start">
+              <div className="flex items-center justify-center w-[22px] h-[22px] rounded-full bg-amber-400/10 border border-amber-400/20 text-[9px] font-bold text-amber-300">
                 {c.userName?.[0]?.toUpperCase() ?? <RiUserSmileLine />}
               </div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <span
-                  style={{
-                    fontSize: "10px",
-                    fontWeight: 600,
-                    color: "rgba(245,166,35,0.7)",
-                    letterSpacing: "0.01em",
-                    marginRight: "6px",
-                  }}
-                >
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] font-semibold text-amber-300/70 mr-1">
                   {c.userName ?? "Anonymous"}
                 </span>
-                <span
-                  style={{
-                    fontSize: "11.5px",
-                    color: "rgba(240,230,211,0.5)",
-                    lineHeight: 1.5,
-                    fontWeight: 300,
-                    wordBreak: "break-word",
-                  }}
-                >
+
+                <span className="text-[11px] text-white/60 break-words">
                   {c.text}
                 </span>
               </div>
@@ -135,64 +102,23 @@ export default function CommentSection({
         </div>
       )}
 
-      {/* Empty state */}
-      {commentList.length === 0 && (
-        <div
-          className="flex items-center gap-2"
-          style={{ marginBottom: "10px" }}
-        >
-          <HiOutlineChatBubbleLeftEllipsis
-            style={{ color: "rgba(255,255,255,0.1)", fontSize: "13px" }}
-          />
-          <span
-            style={{
-              fontSize: "10px",
-              color: "rgba(255,255,255,0.18)",
-              letterSpacing: "0.06em",
-              fontStyle: "italic",
-            }}
-          >
+      {/* Empty */}
+      {!loading && commentList.length === 0 && (
+        <div className="flex items-center gap-2 mb-3">
+          <HiOutlineChatBubbleLeftEllipsis className="text-white/10 text-sm" />
+          <span className="text-[10px] text-white/20 italic">
             No reviews yet. Be the first.
           </span>
         </div>
       )}
 
-      {/* Input row */}
-      <div
-        className="flex items-center gap-2"
-        style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: "8px",
-          padding: "6px 8px",
-          transition: "border-color 0.2s ease",
-        }}
-        onFocusCapture={(e) =>
-          (e.currentTarget.style.borderColor = "rgba(245,166,35,0.3)")
-        }
-        onBlurCapture={(e) =>
-          (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")
-        }
-      >
-        {/* User initial or icon */}
-        <div
-          className="flex-shrink-0 flex items-center justify-center rounded-full"
-          style={{
-            width: "22px",
-            height: "22px",
-            background: user
-              ? "rgba(245,166,35,0.1)"
-              : "rgba(255,255,255,0.04)",
-            border: `1px solid ${user ? "rgba(245,166,35,0.2)" : "rgba(255,255,255,0.07)"}`,
-            fontSize: "9px",
-            fontWeight: 700,
-            color: user ? "rgba(245,166,35,0.7)" : "rgba(255,255,255,0.2)",
-          }}
-        >
+      {/* Input */}
+      <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-md px-2 py-1">
+        <div className="flex items-center justify-center w-[22px] h-[22px] rounded-full text-[9px] font-bold border border-amber-400/20 bg-amber-400/10 text-amber-300">
           {user ? (
             (user.fullName?.[0] ?? user.firstName?.[0] ?? "?").toUpperCase()
           ) : (
-            <RiUserSmileLine style={{ fontSize: "11px" }} />
+            <RiUserSmileLine />
           )}
         </div>
 
@@ -202,57 +128,22 @@ export default function CommentSection({
           onKeyDown={handleKey}
           placeholder={user ? "Say something…" : "Sign in to comment"}
           disabled={!user}
-          style={{
-            flex: 1,
-            background: "transparent",
-            border: "none",
-            outline: "none",
-            fontSize: "11.5px",
-            color: "rgba(240,230,211,0.65)",
-            fontFamily: "'DM Sans', sans-serif",
-            fontWeight: 300,
-            letterSpacing: "0.01em",
-            caretColor: "#f5a623",
-          }}
+          className="flex-1 bg-transparent outline-none text-[11px] text-white/70 placeholder:text-white/20"
         />
 
         <button
           onClick={addComment}
           disabled={!text.trim() || posting || !user}
-          style={{
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "26px",
-            height: "26px",
-            borderRadius: "6px",
-            border: "none",
-            background:
-              text.trim() && !posting && user
-                ? "rgba(245,166,35,0.18)"
-                : "transparent",
-            color:
-              text.trim() && !posting && user
-                ? "rgba(245,166,35,0.9)"
-                : "rgba(255,255,255,0.15)",
-            cursor: text.trim() && !posting && user ? "pointer" : "default",
-            transition:
-              "background 0.2s ease, color 0.2s ease, transform 0.15s ease",
-            transform: posting ? "scale(0.88)" : "scale(1)",
-            fontSize: "14px",
-          }}
+          className={`flex items-center justify-center w-6 h-6 rounded transition
+          ${
+            text.trim() && user
+              ? "bg-amber-400/20 text-amber-300"
+              : "text-white/20"
+          }`}
         >
           <TbSend2 />
         </button>
       </div>
-
-      <style>{`
-        @keyframes fadeSlideIn {
-          from { opacity: 0; transform: translateY(6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }

@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum NotificationType {
+  MOVIE
+  COMMENT
+  LIKE
+}
+
 model Movie {
   id          String   @id @default(cuid())
   imdbId      String
@@ -18,9 +24,9 @@ model Movie {
   rating      Float?
   genres      String[]
 
-  review        String?
-  recommendedBy String
-  recommendedByName String 
+  review             String?
+  recommendedBy      String
+  recommendedByName  String 
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -28,6 +34,8 @@ model Movie {
   comments Comment[]
   likes    Like[]
   ratings  Rating[]
+
+  notifications Notification[]
 
   @@unique([imdbId, recommendedBy])
   @@index([recommendedBy])
@@ -63,4 +71,25 @@ model Rating {
   movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
 
   @@unique([movieId, userId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  message   String
+  movieId   String?
+  actorId   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  movie Movie? @relation(fields: [movieId], references: [id], onDelete: Cascade)
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

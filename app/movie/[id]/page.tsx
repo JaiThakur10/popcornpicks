@@ -277,7 +277,7 @@ export default function MoviePage() {
             >
               {/* Top sheen */}
               <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-amber-400/25 to-transparent" />
-              <CommentSection movieId={movie.id} comments={movie.comments} />
+              <CommentSection movieId={movie.id} />
             </div>
           </div>
         </div>
